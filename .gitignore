@@ -1,0 +1,47 @@
+# Environment files
+.env
+*.env
+!*.env.example
+ENV_VARIABLES.md
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Dependency directories
+node_modules/
+backend/venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+.next/
+out/
+
+# IDE / Editor files
+.vscode/
+.idea/
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Project specific ignores (based on existing sub-project)
+Fast---Ingles/backend/verify_ai_config.py
+Fast---Ingles/backend/print_routes.py
+Fast---Ingles/backend/seed_users_final.py
+
+# Docker
+.docker/
+docker-compose.override.yml

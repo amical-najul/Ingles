@@ -1,0 +1,91 @@
+version: '3.8'
+
+services:
+  backend_api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fast-ingles-backend
+    restart: always
+    # Env File (Unified)
+    env_file:
+      - .env
+    environment:
+      # --- App Settings ---
+      - APP_NAME=Fast-Ingles VPS
+      - DEBUG=false
+
+      # --- MinIO (Storage) ---
+      # Force HTTPS/Secure for production (Config default is False)
+      - MINIO_SECURE=true
+
+    # Port mapping for local testing
+    ports:
+      - "8000:8000"
+
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health')" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+    networks:
+      default:
+        aliases:
+          - backend_api
+      traefik_proxy:
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_proxy"
+
+      # Router para API (captura /api, /docs, /redoc)
+      - "traefik.http.routers.ingles-api.rule=Host(`ingles.n8nprueba.shop`) && PathPrefix(`/api`, `/docs`, `/redoc`, `/openapi.json`)"
+      - "traefik.http.routers.ingles-api.entrypoints=websecure"
+      - "traefik.http.routers.ingles-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.ingles-api.priority=100"
+      - "traefik.http.services.ingles-api.loadbalancer.server.port=8000"
+
+      # CORS Headers (MUST include Authorization for Firebase tokens)
+      - "traefik.http.middlewares.api-cors.headers.accesscontrolalloworiginlist=https://ingles.n8nprueba.shop"
+      - "traefik.http.middlewares.api-cors.headers.accesscontrolallowmethods=GET,POST,PUT,DELETE,OPTIONS"
+      - "traefik.http.middlewares.api-cors.headers.accesscontrolallowheaders=Authorization,Content-Type,Accept,Origin,X-Requested-With"
+      - "traefik.http.middlewares.api-cors.headers.accesscontrolallowcredentials=true"
+      - "traefik.http.middlewares.api-cors.headers.accesscontrolmaxage=86400"
+      - "traefik.http.routers.ingles-api.middlewares=api-cors"
+
+  frontend_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - VITE_FIREBASE_API_KEY=${VITE_FIREBASE_API_KEY}
+        - VITE_FIREBASE_AUTH_DOMAIN=${VITE_FIREBASE_AUTH_DOMAIN}
+        - VITE_FIREBASE_PROJECT_ID=${VITE_FIREBASE_PROJECT_ID}
+        - VITE_FIREBASE_STORAGE_BUCKET=${VITE_FIREBASE_STORAGE_BUCKET}
+        - VITE_FIREBASE_MESSAGING_SENDER_ID=${VITE_FIREBASE_MESSAGING_SENDER_ID}
+        - VITE_FIREBASE_APP_ID=${VITE_FIREBASE_APP_ID}
+    container_name: fast-ingles-frontend
+    restart: always
+    depends_on:
+      - backend_api
+    # Port mapping for local testing
+    ports:
+      - "80:80"
+    networks:
+      - default
+      - traefik_proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=traefik_proxy"
+
+      # Router para Frontend (Todo lo demás)
+      - "traefik.http.routers.ingles-web.rule=Host(`ingles.n8nprueba.shop`)"
+      - "traefik.http.routers.ingles-web.entrypoints=websecure"
+      - "traefik.http.routers.ingles-web.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.ingles-web.priority=1"
+      - "traefik.http.services.ingles-web.loadbalancer.server.port=80"
+
+networks:
+  traefik_proxy:
+    external: true

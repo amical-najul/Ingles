@@ -1,0 +1,51 @@
+version: '3.8'
+
+# Fast-Ingles Infrastructure (Local Development)
+# Containers: Backend, Frontend
+# Networks: Public
+# NOTE: PostgreSQL and MinIO are EXTERNAL SERVICES (Supabase, files.n8nprueba.shop)
+
+services:
+  # --- EXTERNAL SERVICES (NOT CONTAINERS) ---
+  # PostgreSQL: Supabase (configured in .env)
+  # MinIO/S3: files.n8nprueba.shop (configured in .env)
+
+  # Backend API
+  # Service: backend_api
+  # Container: Backend-FastApi-FastIngles
+  backend_api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: Backend-FastApi-FastIngles
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      # App name override (optional)
+      APP_NAME: ${APP_NAME:-Fast-Ingles}
+    ports:
+      - "8000:8000"
+    networks:
+      - net-public
+
+  # Frontend App (Nginx)
+  # Service: frontend_app
+  # Container: Frontend-React-FastIngles
+  frontend_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: Frontend-React-FastIngles
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend_api
+    networks:
+      - net-public
+
+# Network
+networks:
+  net-public:
+    driver: bridge
