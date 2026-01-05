@@ -8,8 +8,8 @@ services:
     container_name: fast-ingles-backend
     restart: always
     # Env File (Unified)
-    env_file:
-      - .env
+    #env_file:
+     # - .env
     environment:
       # --- App Settings ---
       - APP_NAME=${APP_NAME:-Fast-Ingles VPS}
