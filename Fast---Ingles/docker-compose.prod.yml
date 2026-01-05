@@ -64,8 +64,8 @@ services:
     depends_on:
       - backend_api
     # Port mapping for local testing
-    ports:
-      - "80:80"
+    #ports:
+      #- "80:80"
     networks:
       - default
       - traefik_proxy
