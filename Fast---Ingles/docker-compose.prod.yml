@@ -7,22 +7,20 @@ services:
       dockerfile: Dockerfile
     container_name: fast-ingles-backend
     restart: always
-    # Env File (Unified)
-    #env_file:
-     # - .env
     environment:
       # --- App Settings ---
       - APP_NAME=${APP_NAME:-Fast-Ingles VPS}
       - DEBUG=false
-
       # --- MinIO (Storage) ---
-      # Force HTTPS/Secure for production (Config default is False)
       - MINIO_SECURE=true
-
-    # Port mapping for local testing
-    ports:
-      - "8000:8000"
-
+    
+    # El backend necesita conectarse a la red del Postgres (internal_services)
+    # y a la red de Traefik para ser visible en internet.
+    networks:
+      - default
+      - traefik_proxy
+      - internal_services
+    
     healthcheck:
       test: [ "CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health')" ]
       interval: 30s
@@ -30,11 +28,6 @@ services:
       retries: 3
       start_period: 10s
 
-    networks:
-      default:
-        aliases:
-          - backend_api
-      traefik_proxy:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_proxy"
@@ -46,7 +39,7 @@ services:
       - "traefik.http.routers.ingles-api.priority=100"
       - "traefik.http.services.ingles-api.loadbalancer.server.port=8000"
 
-      # CORS Headers (Updated for local usage)
+      # CORS Headers
       - "traefik.http.middlewares.api-cors.headers.accesscontrolalloworiginlist=https://ingles.n8nprueba.shop"
       - "traefik.http.middlewares.api-cors.headers.accesscontrolallowmethods=GET,POST,PUT,DELETE,OPTIONS"
       - "traefik.http.middlewares.api-cors.headers.accesscontrolallowheaders=Authorization,Content-Type,Accept,Origin,X-Requested-With"
@@ -58,17 +51,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      # Removed obsolete Firebase build args
     container_name: fast-ingles-frontend
     restart: always
     depends_on:
       - backend_api
-    # Port mapping for local testing
-    #ports:
-      #- "80:80"
+    
     networks:
       - default
       - traefik_proxy
+    
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_proxy"
@@ -81,5 +72,9 @@ services:
       - "traefik.http.services.ingles-web.loadbalancer.server.port=80"
 
 networks:
+  # Red externa para Traefik
   traefik_proxy:
+    external: true
+  # Red externa donde reside tu contenedor n8n_postgres
+  internal_services:
     external: true
