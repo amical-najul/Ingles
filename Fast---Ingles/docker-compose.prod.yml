@@ -75,7 +75,7 @@ networks:
   # Red externa para Traefik
   traefik_proxy:
     external: true
-  # Red externa donde reside tu contenedor n8n_postgres
+  # Red externa donde reside tu contenedor  postgres
   internal_services:
     external: true
       aliases:
