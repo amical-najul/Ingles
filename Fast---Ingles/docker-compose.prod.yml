@@ -8,18 +8,16 @@ services:
     container_name: fast-ingles-backend
     restart: always
     environment:
-      # --- App Settings ---
       - APP_NAME=${APP_NAME:-Fast-Ingles VPS}
       - DEBUG=false
-      # --- MinIO (Storage) ---
       - MINIO_SECURE=true
     
-    # El backend necesita conectarse a la red del Postgres (internal_services)
-    # y a la red de Traefik para ser visible en internet.
     networks:
-      - default
-      - traefik_proxy
-      - internal_services
+      default:
+      traefik_proxy:
+      internal_services:
+        aliases:
+          - postgres-db  # El alias ahora está correctamente ubicado aquí
     
     healthcheck:
       test: [ "CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health')" ]
@@ -31,15 +29,11 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_proxy"
-
-      # Router para API (captura /api, /docs, /redoc)
       - "traefik.http.routers.ingles-api.rule=Host(`ingles.n8nprueba.shop`) && PathPrefix(`/api`, `/docs`, `/redoc`, `/openapi.json`)"
       - "traefik.http.routers.ingles-api.entrypoints=websecure"
       - "traefik.http.routers.ingles-api.tls.certresolver=letsencrypt"
       - "traefik.http.routers.ingles-api.priority=100"
       - "traefik.http.services.ingles-api.loadbalancer.server.port=8000"
-
-      # CORS Headers
       - "traefik.http.middlewares.api-cors.headers.accesscontrolalloworiginlist=https://ingles.n8nprueba.shop"
       - "traefik.http.middlewares.api-cors.headers.accesscontrolallowmethods=GET,POST,PUT,DELETE,OPTIONS"
       - "traefik.http.middlewares.api-cors.headers.accesscontrolallowheaders=Authorization,Content-Type,Accept,Origin,X-Requested-With"
@@ -55,16 +49,12 @@ services:
     restart: always
     depends_on:
       - backend_api
-    
     networks:
       - default
       - traefik_proxy
-    
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=traefik_proxy"
-
-      # Router para Frontend (Todo lo demás)
       - "traefik.http.routers.ingles-web.rule=Host(`ingles.n8nprueba.shop`)"
       - "traefik.http.routers.ingles-web.entrypoints=websecure"
       - "traefik.http.routers.ingles-web.tls.certresolver=letsencrypt"
@@ -72,11 +62,7 @@ services:
       - "traefik.http.services.ingles-web.loadbalancer.server.port=80"
 
 networks:
-  # Red externa para Traefik
   traefik_proxy:
     external: true
-  # Red externa donde reside tu contenedor  postgres
   internal_services:
     external: true
-      aliases:
-        - postgres-db
