@@ -8,17 +8,37 @@ services:
     container_name: fast-ingles-backend
     restart: always
     environment:
+      # --- App Settings ---
       - APP_NAME=${APP_NAME:-Fast-Ingles VPS}
       - DEBUG=false
-      - MINIO_SECURE=true
+      
+      # --- Base de Datos (¡ESTA SECCIÓN FALTABA!) ---
+      # Esto conecta la variable de Portainer con el interior del contenedor
+      - POSTGRES_HOST=${POSTGRES_HOST}
+      - POSTGRES_PORT=${POSTGRES_PORT:-5432}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+      
+      # --- Seguridad ---
+      - SECRET_KEY=${SECRET_KEY}
+      - ALGORITHM=${ALGORITHM:-HS256}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      
+      # --- MinIO (Storage) ---
+      - MINIO_ENDPOINT=${MINIO_ENDPOINT}
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_BUCKET=${MINIO_BUCKET}
+      - MINIO_SECURE=${MINIO_SECURE}
     
     networks:
       default:
       traefik_proxy:
       internal_services:
         aliases:
-          - postgres-db  # El alias ahora está correctamente ubicado aquí
-    
+          - postgres-db
+
     healthcheck:
       test: [ "CMD", "python", "-c", "import httpx; httpx.get('http://localhost:8000/health')" ]
       interval: 30s
