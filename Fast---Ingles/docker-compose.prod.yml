@@ -78,3 +78,5 @@ networks:
   # Red externa donde reside tu contenedor n8n_postgres
   internal_services:
     external: true
+    aliases:
+          - postgres-db
